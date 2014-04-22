@@ -4,12 +4,14 @@ require 'active_support/core_ext/hash/deep_merge'
 require 'json'
 require 'csv'
 require 'benchmark'
+require 'cgi'
 
 #
 # replace old email addresses with new ones in contact list columns
 # this is to keep reminders and resource management working
 #
 
+# must be an admin token
 SS_TOKEN = 'INSERT-YOUR-TOKEN-HERE'
 CSV_FILE = 'email-map.csv'
 
@@ -91,7 +93,9 @@ elapsed = Benchmark.realtime {
   puts "Processing sheets ..."
   sheets.each_with_index {|sheet, index|
     puts "  sheet #{index+1}"
-    body = ss.request('get', "/sheet/#{sheet['id']}")[0] 
+    owner = sheet['owner']
+    options = { headers: { 'Assume-User' => CGI.escape(owner)} }
+    body = ss.request('get', "/sheet/#{sheet['id']}", options)[0]
     columns = body['columns']
     rows = body['rows']
     contact_columns = columns.select{|c| c['type'] == "CONTACT_LIST"}
@@ -119,12 +123,14 @@ elapsed = Benchmark.realtime {
         }
 
         # if found matches, execute row update query
+        # assume identity of sheet owner
         puts "    CONTACT_LIST cells to update #{cells_to_update.length}"
         if !cells_to_update.empty?
           # update row
           options = {
             headers: { 
-              'Content-Type' => 'application/json'
+              'Content-Type' => 'application/json',
+              'Assume-User' => CGI.escape(owner)
             },
             body: cells_to_update.to_json
           }
