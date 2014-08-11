@@ -17,10 +17,7 @@ CSV_FILE = 'email-map.csv'
 
 class Smartsheet
   include HTTParty
-  # production
-  #base_uri @@ss_uri = 'https://api.smartsheet.com/1.1'
-  # development
-  base_uri @@ss_uri = 'https://lab.smartsheet.com/current/rest/1.1'
+  base_uri @@ss_uri = 'https://api.smartsheet.com/1.1'
   
   def initialize(token)
     @auth_options = {headers: {"Authorization" => 'Bearer ' + token}}
